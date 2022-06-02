@@ -1,6 +1,6 @@
 # repo do marcão do jogo do ironman em pygame: https://github.com/profmarcossantos/IronMan2021.2
 
-from operator import indexOf
+from operator import index, indexOf
 import pygame
 import random
 import time
@@ -11,10 +11,10 @@ icone = pygame.image.load("assets/logo.png")
 pygame.display.set_caption("try not to die")
 pygame.display.set_icon(icone)
 
-largura = 1080
-altura = 1080
+largura = 700
+altura = 700
 display = pygame.display.set_mode((largura, altura))
-fps = pygame.time.Clock()  # frames per second
+fps = pygame.time.Clock()
 fundo = pygame.image.load("assets/cenario.png")
 
 # coisas boas
@@ -28,10 +28,8 @@ coisasBoas = [agua, banana, brocolis, cenoura, melancia]
 
 
 def randomCoisasBoas():
-    randomico = int(random.random(0, 4))
-
+    randomico = int(random.choice([0, 1, 2, 3, 4]))
     caindo = pygame.image.load(f"assets/coisas-boas/{coisasBoas[randomico]}")
-
     return caindo
 
 
@@ -44,63 +42,70 @@ veneno = pygame.image.load("assets/coisas-ruins/veneno.png")
 coisasRuins = [cerveja, cigarro, drogas, veneno]
 
 
-def randomCoisasRuins():
-    randomico = int(random.random(0, 4))
+def caindoCoisasRuins():
+    for coisa in coisasRuins:
+        print(coisa)
 
-    caindo = pygame.image.load(f"assets/coisas-boas/{coisasRuins[randomico]}")
+# def randomCoisasRuins():
+#     randomico = random.choice([0, 1, 2, 3])
 
-    return caindo
+#     for coisa in coisasRuins:
+#         objeto = index(coisa)
+#         if objeto == randomico:
+#             return coisa
+
+#     caindo = coisa
+#     return caindo
 
 
 # mudança misteriosa e personagem
 mudancaMisterio = pygame.image.load("assets/mudanca-misteriosa.png")
-personagemEsquerda = pygame.image.load(
-    "assets/personagem-andando-esquerda.png")
-personagemDireita = pygame.image.load("assets/personagem-andando-direita.png")
+persoEsquerda = pygame.image.load("assets/personagem-andando-esquerda.png")
+persoDireita = pygame.image.load("assets/personagem-andando-direita.png")
 
 # lista de cores em RGB
 preto = (0, 0, 0)
 branco = (255, 255, 255)
 
 
-def text_objetcs(texto, fonte):
-    textSurface = fonte.render(texto, True, preto)
-    return textSurface, textSurface.get_react()
+# def text_objetcs(texto, fonte):
+#     textSurface = fonte.render(texto, True, preto)
+#     return textSurface, textSurface.get_react()
 
 
-def message(text):
-    fonte = pygame.font.Font("freesansbold.ttf", 50)
-    TextSurf, TextRect = text_objetcs(text, fonte)
-    TextRect.center = ((largura/2), (altura/2))
-    display.blit(TextSurf, TextRect)
-    pygame.display.update()
-    time.sleep(3)
-    jogo()
+# def message(text):
+#     fonte = pygame.font.Font("freesansbold.ttf", 50)
+#     TextSurf, TextRect = text_objetcs(text, fonte)
+#     TextRect.center = ((largura/2), (altura/2))
+#     display.blit(TextSurf, TextRect)
+#     pygame.display.update()
+#     time.sleep(3)
+#     jogo()
 
 
-def dead(desvios):
-    # pygame.mixer.Sound.play(explosaoSom)
-    # pygame.mixer.music.stop()
-    message("Ah, não! Você até tentou, mas não conseguiu evitar: sucumbiu aos prazeres momentâneos e morreu. Você morreu por causa de ", str(
-        desvios), "coisas ruins")
+# def dead(desvios):
+# pygame.mixer.Sound.play(explosaoSom)
+# pygame.mixer.music.stop()
+# message(
+#     f"Ah, não! Você até tentou, mas não conseguiu evitar: sucumbiu aos prazeres momentâneos e morreu. Você morreu por causa de {desvios} coisas ruins")
 
 
-def placar(desvios):
-    font = pygame.font.SysFont(None, 25)
-    texto = font.render("Desvios: " + str(desvios), True, branco)
-    display.blit(0, 0)
+# def placar(desvios):
+#     font = pygame.font.SysFont(None, 25)
+#     texto = font.render("Desvios: " + str(desvios), True, branco)
+# display.blit(0, 0)
 
 
 def jogo():
     # pygame.mixer.music.load("assets/ironsound.mp3")
     # pygame.mixer.music.play(-1)  # -1 significa tocar em looping infinito
-    personagem = personagemEsquerda
-    persoPosicaoX = largura * 0.45
-    persoPosicaoY = altura * 0.8
+    personagem = persoEsquerda
+    persoPosicaoX = largura * 0.55
+    persoPosicaoY = altura * 0.40
     movimentoX = 0
     persoLargura = 360
 
-    missel = pygame.image.load("assets/missile.png")
+    missel = caindoCoisasRuins()
     misselPosicaoX = largura * 0.45
     misselPosicaoY = -220
     misselLargura = 50
@@ -149,14 +154,12 @@ def jogo():
         # análise de colisão
         if persoPosicaoY < misselPosicaoY + misselAltura:
             if persoPosicaoX < misselPosicaoX and persoPosicaoX + persoLargura > misselPosicaoX or misselPosicaoX + misselLargura > persoPosicaoX and misselPosicaoX + misselLargura < persoPosicaoX + persoLargura:
-                dead(desvios)
+                print('morreu')
+                # dead(desvios)
 
-        placar(desvios)
+        # placar(desvios)
         pygame.display.update()  # dá update no display
         fps.tick(60)  # 60 frames por segundo
 
 
 jogo()
-
-print(randomCoisasBoas)
-print(randomCoisasRuins)
