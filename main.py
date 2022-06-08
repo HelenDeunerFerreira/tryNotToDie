@@ -8,30 +8,37 @@ from objetosBons import ObjetoBom
 from poder import Poder
 import random
 
-class Jogo:
-
-    def __init__(self):     
+class Jogo:    
+    def __init__(self):  
+        # Inicialização Jogador
         self.velocidadeJogador = 5
         sprite_jogador = Jogador((larguraTela / 2, alturaTela), larguraTela, self.velocidadeJogador)
         self.jogador = pygame.sprite.GroupSingle(sprite_jogador)
-
+        
+        # Inicialização Vidas
         self.vidas = 4
         self.mostrarVida = pygame.image.load('assets/vida.png').convert_alpha()
         self.vida_x_pos_inicial = larguraTela - (self.mostrarVida.get_size()[0] * 3 + 25)
 
+        # Inicialização Placar
         self.placar = 0
         self.fonte = pygame.font.Font('assets/coffee-extra.ttf', 20)
 
+        # Inicialização Objetos Ruins
         self.objetosRuins = pygame.sprite.Group()
 
+        # Inicialização Objetos Bons
         self.objetosBons = pygame.sprite.Group()
 
-        self.poder = pygame.sprite.Group()
+        # Inicialização Poderes
+        self.poderes = pygame.sprite.Group()
 
+        # Inicialização Música
         musica = pygame.mixer.Sound('assets/musica/trynottodie.mp3')
         musica.set_volume(0.1)
         musica.play(loops = -1)
-        
+      
+        # Inicialização Efeitos
         self.tosse = pygame.mixer.Sound('assets/musica/ruim.mp3')
         self.tosse.set_volume(0.3)
         self.mordida = pygame.mixer.Sound('assets/musica/bom.mp3')
@@ -39,6 +46,7 @@ class Jogo:
         self.som = pygame.mixer.Sound('assets/musica/poder.mp3')
         self.som.set_volume(0.3)
     
+    # Métodos
     def cairObjetoRuim(self):
         posicao = random.randrange(0, 630)
         sprite_objetosRuins = ObjetoRuim(3, alturaTela, posicao)
@@ -52,7 +60,7 @@ class Jogo:
     def cairPoder(self):
         posicao = random.randrange(0, 630)
         sprite_poder = Poder(3, alturaTela, posicao)
-        self.poder.add(sprite_poder)
+        self.poderes.add(sprite_poder)
 
     def colisoesObjetosRuins(self):
         if self.objetosRuins:
@@ -66,10 +74,8 @@ class Jogo:
                     else:
                         self.placar -= 10
                     
-                    if self.vidas <= 0:
-                        pygame.quit()
-                        sys.exit()
-                    #('Ah, não! Você até tentou, mas não conseguiu evitar. Sucumbiu aos prazeres momentâneos e morreu.')
+                    if self.vidas == 0:
+                        fimDeJogo()
 
     def colisoesObjetosBons(self):
         if self.objetosBons:
@@ -80,14 +86,26 @@ class Jogo:
                     self.placar += 10
     
     def colisoesPoder(self):
-        if self.poder:
-            for habilidade in self.poder:
-                if pygame.sprite.spritecollide(habilidade, self.jogador, False):                         
-                    habilidade.kill()
+        if self.poderes:
+            for poder in self.poderes:
+                if pygame.sprite.spritecollide(poder, self.jogador, False):                                          
+                    poder.kill()
                     self.som.play() 
-                    self.placar += 15
-                    if self.vidas < 4:
-                        self.vidas += 1
+                    self.placar += 15 
+                    self.pegouPoder()
+
+    def pegouPoder(self):
+            habilidade = random.randrange(0, 1)          
+            # Vida Extra
+            if habilidade == 0:
+                if self.vidas < 4:
+                    self.vidas += 1
+            # Incremento de Velocidade ao Jogador              
+            elif habilidade == 1: 
+                if self.velocidadeJogador < 20:
+                    self.velocidadeJogador += 1
+            else:
+                pass
 
     def mostrarVidas(self):
         for vida in range(self.vidas -1):
@@ -95,7 +113,7 @@ class Jogo:
             tela.blit(self.mostrarVida, (x, 10))  
 
     def mostrarPlacar(self):
-        mostraPlacar = self.fonte.render(f'Pontos: {self.placar}', False, 'black')
+        mostraPlacar = self.fonte.render(f'Points: {self.placar}', False, 'black')
         rectPlacar = mostraPlacar.get_rect(topleft = (10, 10))
         tela.blit(mostraPlacar, rectPlacar)
 
@@ -111,13 +129,13 @@ class Jogo:
         self.colisoesObjetosBons()
         self.objetosBons.draw(tela)
 
-        self.poder.update()
+        self.poderes.update()
         self.colisoesPoder()
-        self.poder.draw(tela)
+        self.poderes.draw(tela)
 
         self.mostrarVidas()
         self.mostrarPlacar()
-     
+
 if __name__ == '__main__':
     pygame.init()
 
@@ -129,9 +147,11 @@ if __name__ == '__main__':
     alturaTela = 700
     tela = pygame.display.set_mode((larguraTela, alturaTela))
     fundo = pygame.image.load("assets/cenario.png")
+    fonte = pygame.font.Font('assets/coffee-extra.ttf', 20)
     relogio = pygame.time.Clock()
     jogo = Jogo()
 
+    # Eventos
     quedaObjetoRuim = pygame.USEREVENT 
     pygame.time.set_timer(quedaObjetoRuim, 5000)
     quedaObjetoBom = pygame.USEREVENT + 3
@@ -139,27 +159,80 @@ if __name__ == '__main__':
     quedaPoder = pygame.USEREVENT + 2
     pygame.time.set_timer(quedaPoder, 30000)
 
-    while True:
-        for evento in pygame.event.get():
-            if evento.type == pygame.QUIT:
+    def jogar():
+        # Loop de Jogo
+        while True:
+            for evento in pygame.event.get():
+                if evento.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+                if evento.type == quedaObjetoRuim:
+                    jogo.cairObjetoRuim()
+
+                if evento.type == quedaObjetoBom:
+                    jogo.cairObjetoBom()
+                
+                if evento.type == quedaPoder:
+                    jogo.cairPoder()
+
+            tela.fill((30,30,30))
+            tela.blit(fundo, (0, 0))
+
+            jogo.run()
+
+            pygame.display.flip()
+            relogio.tick(60)
+    
+    def menuPrincipal():
+        while True:
+            tela.fill((30,30,30))
+            tela.blit(fundo, (0, 0))
+            tela.blit(icone, (135, 100))
+            mostraTecla = fonte.render('Press the Space Key to Play', False, 'black')
+            rectTecla = mostraTecla.get_rect(center = (larguraTela /2 , 560))
+            tela.blit(mostraTecla, rectTecla)
+            pygame.display.flip()
+
+            for evento in pygame.event.get():
+                if evento.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+            teclas = pygame.key.get_pressed()
+
+            if teclas[pygame.K_SPACE]:
+                jogar() 
+
+            if teclas[pygame.K_ESCAPE]:
                 pygame.quit()
-                sys.exit()
+                sys.exit()  
 
-            if evento.type == quedaObjetoRuim:
-                jogo.cairObjetoRuim()
+    def fimDeJogo():
+        while True:
+            tela.fill((30,30,30))
+            tela.blit(fundo, (0, 0))
+            tela.blit(icone, (135, 100))
+            mostraMensagem = fonte.render('You tried, but succumbed to the Bad Things in the world!', False, 'black')
+            rectMensagem = mostraMensagem.get_rect(center = (larguraTela /2 , 560))
+            tela.blit(mostraMensagem, rectMensagem)
+            mostraTecla = fonte.render('Press the Escape Key to exit', False, 'black')
+            rectTecla = mostraTecla.get_rect(center = (larguraTela /2 , 580)) 
+            tela.blit(mostraTecla, rectTecla)
 
-            if evento.type == quedaObjetoBom:
-                jogo.cairObjetoBom()
-            
-            if evento.type == quedaPoder:
-                jogo.cairPoder()
+            pygame.display.flip()
 
-        tela.fill((30,30,30))
-        tela.blit(fundo, (0, 0))
+            for evento in pygame.event.get():
+                if evento.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
 
-        jogo.run()
+            teclas = pygame.key.get_pressed()
+ 
+            if teclas[pygame.K_ESCAPE]:
+                pygame.quit()
+                sys.exit()   
 
-        pygame.display.flip()
-        relogio.tick(60)
+    menuPrincipal()
 
 # Carlos Eduardo dos Santos, Helen Deuner Ferreira e Karoline Z. Soares
