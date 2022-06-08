@@ -136,8 +136,8 @@ if __name__ == '__main__':
     pygame.time.set_timer(quedaObjetoRuim, 5000)
     quedaObjetoBom = pygame.USEREVENT + 3
     pygame.time.set_timer(quedaObjetoBom, 1500)
-    quedaPoder = pygame.USEREVENT
-    pygame.time.set_timer(quedaPoder, 1500)
+    quedaPoder = pygame.USEREVENT + 2
+    pygame.time.set_timer(quedaPoder, 30000)
 
     while True:
         for evento in pygame.event.get():
