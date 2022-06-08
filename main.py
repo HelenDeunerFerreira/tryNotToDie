@@ -1,165 +1,165 @@
-# repo do marcão do jogo do ironman em pygame: https://github.com/profmarcossantos/IronMan2021.2
+# TRY NOT TO DIE
+# Main.py
 
-from operator import index, indexOf
-import pygame
+import pygame, sys
+from jogador import Jogador
+from objetosRuins import ObjetoRuim
+from objetosBons import ObjetoBom
+from poder import Poder
 import random
-import time
 
-pygame.init()
+class Jogo:
 
-icone = pygame.image.load("assets/logo.png")
-pygame.display.set_caption("try not to die")
-pygame.display.set_icon(icone)
+    def __init__(self):     
+        self.velocidadeJogador = 5
+        sprite_jogador = Jogador((larguraTela / 2, alturaTela), larguraTela, self.velocidadeJogador)
+        self.jogador = pygame.sprite.GroupSingle(sprite_jogador)
 
-largura = 700
-altura = 700
-display = pygame.display.set_mode((largura, altura))
-fps = pygame.time.Clock()
-fundo = pygame.image.load("assets/cenario.png")
+        self.vidas = 4
+        self.mostrarVida = pygame.image.load('assets/vida.png').convert_alpha()
+        self.vida_x_pos_inicial = larguraTela - (self.mostrarVida.get_size()[0] * 3 + 25)
 
-# coisas boas
-agua = pygame.image.load("assets/coisas-boas/agua.png")
-banana = pygame.image.load("assets/coisas-boas/banana.png")
-brocolis = pygame.image.load("assets/coisas-boas/brocolis.png")
-cenoura = pygame.image.load("assets/coisas-boas/cenoura.png")
-melancia = pygame.image.load("assets/coisas-boas/melancia.png")
+        self.placar = 0
+        self.fonte = pygame.font.Font('assets/coffee-extra.ttf', 20)
 
-coisasBoas = [agua, banana, brocolis, cenoura, melancia]
+        self.objetosRuins = pygame.sprite.Group()
 
+        self.objetosBons = pygame.sprite.Group()
 
-def randomCoisasBoas():
-    randomico = int(random.choice([0, 1, 2, 3, 4]))
-    caindo = pygame.image.load(f"assets/coisas-boas/{coisasBoas[randomico]}")
-    return caindo
+        self.poder = pygame.sprite.Group()
 
+        musica = pygame.mixer.Sound('assets/musica/trynottodie.mp3')
+        musica.set_volume(0.1)
+        musica.play(loops = -1)
+        
+        self.tosse = pygame.mixer.Sound('assets/musica/ruim.mp3')
+        self.tosse.set_volume(0.3)
+        self.mordida = pygame.mixer.Sound('assets/musica/bom.mp3')
+        self.mordida.set_volume(0.3)
+        self.som = pygame.mixer.Sound('assets/musica/poder.mp3')
+        self.som.set_volume(0.3)
+    
+    def cairObjetoRuim(self):
+        posicao = random.randrange(0, 630)
+        sprite_objetosRuins = ObjetoRuim(3, alturaTela, posicao)
+        self.objetosRuins.add(sprite_objetosRuins)
 
-# coisas ruins
-cerveja = pygame.image.load("assets/coisas-ruins/cerveja.png")
-cigarro = pygame.image.load("assets/coisas-ruins/cigarro.png")
-drogas = pygame.image.load("assets/coisas-ruins/drogas.png")
-veneno = pygame.image.load("assets/coisas-ruins/veneno.png")
+    def cairObjetoBom(self):
+        posicao = random.randrange(0, 630)
+        sprite_objetosBons = ObjetoBom(3, alturaTela, posicao)
+        self.objetosBons.add(sprite_objetosBons)
 
-coisasRuins = [cerveja, cigarro, drogas, veneno]
+    def cairPoder(self):
+        posicao = random.randrange(0, 630)
+        sprite_poder = Poder(3, alturaTela, posicao)
+        self.poder.add(sprite_poder)
 
+    def colisoesObjetosRuins(self):
+        if self.objetosRuins:
+            for objetoRuim in self.objetosRuins:
+                if pygame.sprite.spritecollide(objetoRuim, self.jogador, False):
+                    objetoRuim.kill()
+                    self.vidas -= 1
+                    self.tosse.play()
+                    if self.placar <= 0:
+                        pass
+                    else:
+                        self.placar -= 10
+                    
+                    if self.vidas <= 0:
+                        pygame.quit()
+                        sys.exit()
+                    #('Ah, não! Você até tentou, mas não conseguiu evitar. Sucumbiu aos prazeres momentâneos e morreu.')
 
-def caindoCoisasRuins():
-    for coisa in coisasRuins:
-        print(coisa)
+    def colisoesObjetosBons(self):
+        if self.objetosBons:
+            for objetoBom in self.objetosBons:
+                if pygame.sprite.spritecollide(objetoBom, self.jogador, False):                         
+                    objetoBom.kill()
+                    self.mordida.play() 
+                    self.placar += 10
+    
+    def colisoesPoder(self):
+        if self.poder:
+            for habilidade in self.poder:
+                if pygame.sprite.spritecollide(habilidade, self.jogador, False):                         
+                    habilidade.kill()
+                    self.som.play() 
+                    self.placar += 15
+                    if self.vidas < 4:
+                        self.vidas += 1
 
-# def randomCoisasRuins():
-#     randomico = random.choice([0, 1, 2, 3])
+    def mostrarVidas(self):
+        for vida in range(self.vidas -1):
+            x = self.vida_x_pos_inicial + (vida * (self.mostrarVida.get_size()[0] + 10))
+            tela.blit(self.mostrarVida, (x, 10))  
 
-#     for coisa in coisasRuins:
-#         objeto = index(coisa)
-#         if objeto == randomico:
-#             return coisa
+    def mostrarPlacar(self):
+        mostraPlacar = self.fonte.render(f'Pontos: {self.placar}', False, 'black')
+        rectPlacar = mostraPlacar.get_rect(topleft = (10, 10))
+        tela.blit(mostraPlacar, rectPlacar)
 
-#     caindo = coisa
-#     return caindo
+    def run(self):
+        self.jogador.update()
+        self.jogador.draw(tela)
+        
+        self.objetosRuins.update()
+        self.colisoesObjetosRuins()
+        self.objetosRuins.draw(tela)
 
+        self.objetosBons.update()
+        self.colisoesObjetosBons()
+        self.objetosBons.draw(tela)
 
-# mudança misteriosa e personagem
-mudancaMisterio = pygame.image.load("assets/mudanca-misteriosa.png")
-persoEsquerda = pygame.image.load("assets/personagem-andando-esquerda.png")
-persoDireita = pygame.image.load("assets/personagem-andando-direita.png")
+        self.poder.update()
+        self.colisoesPoder()
+        self.poder.draw(tela)
 
-# lista de cores em RGB
-preto = (0, 0, 0)
-branco = (255, 255, 255)
+        self.mostrarVidas()
+        self.mostrarPlacar()
+     
+if __name__ == '__main__':
+    pygame.init()
 
+    icone = pygame.image.load("assets/logo.png")
+    pygame.display.set_caption("TRY NOT TO DIE")
+    pygame.display.set_icon(icone)
 
-# def text_objetcs(texto, fonte):
-#     textSurface = fonte.render(texto, True, preto)
-#     return textSurface, textSurface.get_react()
+    larguraTela = 700
+    alturaTela = 700
+    tela = pygame.display.set_mode((larguraTela, alturaTela))
+    fundo = pygame.image.load("assets/cenario.png")
+    relogio = pygame.time.Clock()
+    jogo = Jogo()
 
-
-# def message(text):
-#     fonte = pygame.font.Font("freesansbold.ttf", 50)
-#     TextSurf, TextRect = text_objetcs(text, fonte)
-#     TextRect.center = ((largura/2), (altura/2))
-#     display.blit(TextSurf, TextRect)
-#     pygame.display.update()
-#     time.sleep(3)
-#     jogo()
-
-
-# def dead(desvios):
-# pygame.mixer.Sound.play(explosaoSom)
-# pygame.mixer.music.stop()
-# message(
-#     f"Ah, não! Você até tentou, mas não conseguiu evitar: sucumbiu aos prazeres momentâneos e morreu. Você morreu por causa de {desvios} coisas ruins")
-
-
-# def placar(desvios):
-#     font = pygame.font.SysFont(None, 25)
-#     texto = font.render("Desvios: " + str(desvios), True, branco)
-# display.blit(0, 0)
-
-
-def jogo():
-    # pygame.mixer.music.load("assets/ironsound.mp3")
-    # pygame.mixer.music.play(-1)  # -1 significa tocar em looping infinito
-    personagem = persoEsquerda
-    persoPosicaoX = largura * 0.55
-    persoPosicaoY = altura * 0.40
-    movimentoX = 0
-    persoLargura = 360
-
-    missel = caindoCoisasRuins()
-    misselPosicaoX = largura * 0.45
-    misselPosicaoY = -220
-    misselLargura = 50
-    misselAltura = 250
-    misselVelocidade = 5
-
-    desvios = 0
+    quedaObjetoRuim = pygame.USEREVENT 
+    pygame.time.set_timer(quedaObjetoRuim, 5000)
+    quedaObjetoBom = pygame.USEREVENT + 3
+    pygame.time.set_timer(quedaObjetoBom, 1500)
+    quedaPoder = pygame.USEREVENT
+    pygame.time.set_timer(quedaPoder, 1500)
 
     while True:
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 pygame.quit()
-                quit()
-            if evento.type == pygame.KEYDOWN:
-                if evento.key == pygame.K_LEFT:
-                    movimentoX = -5
-                elif evento.key == pygame.K_RIGHT:
-                    movimentoX = 5
-            if evento.type == pygame.KEYUP:
-                movimentoX = 0
+                sys.exit()
 
-        persoPosicaoX = persoPosicaoX + movimentoX
+            if evento.type == quedaObjetoRuim:
+                jogo.cairObjetoRuim()
 
-        if persoPosicaoX < 0:
-            persoPosicaoX = 0
-        elif persoPosicaoX > 720:
-            # a largura do personagem é 360 (1080 - 360)
-            persoPosicaoX = 720 - 360
+            if evento.type == quedaObjetoBom:
+                jogo.cairObjetoBom()
+            
+            if evento.type == quedaPoder:
+                jogo.cairPoder()
 
-        display.fill(branco)
-        display.blit(fundo, (0, 0))  # insere imagem na tela (imagem , posição)
-        # primeiro o fundo, depois o ironman
-        display.blit(personagem, (persoPosicaoX, persoPosicaoY))
+        tela.fill((30,30,30))
+        tela.blit(fundo, (0, 0))
 
-        display.blit(missel, (misselPosicaoX, misselPosicaoY))
-        misselPosicaoY = misselPosicaoY + misselVelocidade
+        jogo.run()
 
-        # quando ultrapassa a barreira começa em um lugar novo aleatório
-        if misselPosicaoY > altura:
-            # pygame.mixer.Sound.play(misselSom)
-            misselPosicaoY = -220
-            misselVelocidade += 1
-            misselPosicaoX = random.randrange(0, largura)
-            desvios += 1
+        pygame.display.flip()
+        relogio.tick(60)
 
-        # análise de colisão
-        if persoPosicaoY < misselPosicaoY + misselAltura:
-            if persoPosicaoX < misselPosicaoX and persoPosicaoX + persoLargura > misselPosicaoX or misselPosicaoX + misselLargura > persoPosicaoX and misselPosicaoX + misselLargura < persoPosicaoX + persoLargura:
-                print('morreu')
-                # dead(desvios)
-
-        # placar(desvios)
-        pygame.display.update()  # dá update no display
-        fps.tick(60)  # 60 frames por segundo
-
-
-jogo()
+# Carlos Eduardo dos Santos, Helen Deuner Ferreira e Karoline Z. Soares
